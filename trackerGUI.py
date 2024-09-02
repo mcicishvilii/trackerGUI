@@ -99,16 +99,15 @@ class TestScreen:
         self.status_label.grid(row=7, columnspan=2, pady=10)
 
         # Create Treeview in the right frame
-        self.tree = ttk.Treeview(self.right_frame, columns=("Edit","Order Number", "Brand Name", "Pickup Date", "Delivery Date", "Status", "File Link", "Delete",), show="headings")
-        self.tree.heading("Edit", text="Edit")
-        self.tree.heading("Order Number", text="Order Number")
-        self.tree.heading("Brand Name", text="Brand Name")
-        self.tree.heading("Pickup Date", text="Pickup Date")
-        self.tree.heading("Delivery Date", text="Delivery Date")
-        self.tree.heading("Status", text="Status")
-        self.tree.heading("File Link", text="File Link")
-        self.tree.heading("Delete", text="Delete")
-
+        self.tree = ttk.Treeview(self.right_frame, columns=("Edit", "Order Number", "Brand Name", "Pickup Date", "Delivery Date", "Status", "File Link", "Delete",), show="headings")
+        self.tree.column("Edit", width=100, anchor="center")
+        self.tree.column("Order Number", width=120, anchor="center")
+        self.tree.column("Brand Name", width=120, anchor="center")
+        self.tree.column("Pickup Date", width=120, anchor="center")
+        self.tree.column("Delivery Date", width=120, anchor="center")
+        self.tree.column("Status", width=100, anchor="center")
+        self.tree.column("File Link", width=200, anchor="center")
+        self.tree.column("Delete", width=100, anchor="center")
 
 
         # Add vertical scrollbar
@@ -121,7 +120,7 @@ class TestScreen:
         hsb.pack(side='bottom', fill='x')
         self.tree.configure(xscrollcommand=hsb.set)
 
-        self.tree.pack(fill='both', expand=False)
+        self.tree.pack(fill='both', expand=True)
 
         self.tree.bind("<Button-1>", self.on_tree_item_button_click)
         self.tree.bind("<Button-2>", self.on_tree_item_button_click)
