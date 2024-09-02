@@ -130,7 +130,7 @@ class TestScreen:
         # Identify which row was clicked
         row_id = self.tree.identify_row(event.y)
         col_id = self.tree.identify_column(event.x)
-        
+
         if row_id:
             # Check if the click was on the last column (assume it contains the "-" button)
             col_id = self.tree.identify_column(event.x)
@@ -158,7 +158,7 @@ class TestScreen:
                             item["deliveryDate"],
                             item["status"],
                             item["fileLink"],
-                            "-"
+                            "წაშლა"
                         ))
                 except ValueError:
                     messagebox.showerror("Error", "Response is not in JSON format")
