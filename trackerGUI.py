@@ -136,7 +136,7 @@ class TestScreen:
 
         if row_id:
             # Check if the click was on the "Delete" or "Edit" column
-            if col_id == '#7':  # Change #8 to the index of your delete column
+            if col_id == '#8':  # Change #8 to the index of your delete column
                 if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this item?"):
                     self.delete_item(row_id)
             elif col_id == '#1':  # Change #7 to the index of your edit column
