@@ -4,6 +4,9 @@ from tkinter import ttk
 from tkcalendar import DateEntry
 import requests
 import json
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 class TestScreen:
     def __init__(self, root):
@@ -128,7 +131,6 @@ class TestScreen:
         # Load data into Treeview
         self.load_data()
 
-
     def on_tree_item_button_click(self, event):
         # Identify which row was clicked
         row_id = self.tree.identify_row(event.y)
@@ -142,6 +144,34 @@ class TestScreen:
             elif col_id == '#1':  # Change #7 to the index of your edit column
                 self.edit_item(row_id)
 
+    def send_email_custom(self,subject, body, recipients):
+        try:
+            # SMTP server configuration
+            smtp_server = "smtp.gmail.com"  # Replace with your SMTP server
+            smtp_port = 587  # Usually 587 for TLS, 465 for SSL
+            smtp_username = "mcicishvilii@gmail.com"  # Replace with your email
+            smtp_password = "rqol pcvg qntd fuhs"  # Replace with your password
+
+            # Create message
+            msg = MIMEMultipart()
+            msg['From'] = smtp_username
+            msg['To'] = ", ".join(recipients)
+            msg['Subject'] = subject
+
+            # Add body to email
+            msg.attach(MIMEText(body, 'plain'))
+
+            # Establish a secure session with the server
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+
+            # Send email
+            server.send_message(msg)
+            server.quit()
+            print("Email sent successfully.")
+        except Exception as e:
+            print(f"Failed to send email: {str(e)}")
 
     def load_data(self):
         try:
@@ -172,6 +202,7 @@ class TestScreen:
                 messagebox.showerror("Error", "Failed to connect to the server")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
+ 
     def delete_item(self, item_id):
         try:
             response = requests.post('https://ladogudi.serv00.net/deleteItem.php', json={'id': item_id})
@@ -187,7 +218,7 @@ class TestScreen:
                 self.status_label.config(text="Failed to connect to the server")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
-
+ 
     def edit_item(self, item_id):
         item = self.tree.item(item_id)['values']
         # Populate form with selected item's data
@@ -200,8 +231,8 @@ class TestScreen:
 
         # Store the id for the update operation
         self.current_edit_id = item_id
+        self.initial_status = item[5]  # Store the initial status before editing
         self.status_label.config(text="Editing item...")
-
 
     def submit_form(self):
         try:
@@ -229,18 +260,32 @@ class TestScreen:
                 'fileLink': file_link
             }
 
+            email_subject = "New Entry Added" if not hasattr(self, 'current_edit_id') else "Entry Updated"
+            email_body = f"Order Number: {order_number}\nBrand Name: {brand_name}\nPickup Date: {pickup_date_str}\nDelivery Date: {delivery_date_str}\nStatus: {status}\nFile Link: {file_link}"
+            send_email_flag = False
+
             if hasattr(self, 'current_edit_id') and self.current_edit_id:
                 # Update the item
                 payload['id'] = self.current_edit_id
                 response = requests.post('https://ladogudi.serv00.net/updateItem.php', json=payload)
+
+                # Only send an email if the status is updated
+                if self.initial_status != status:
+                    send_email_flag = True
             else:
                 # Insert new item
                 response = requests.post('https://ladogudi.serv00.net/insertItem.php', json=payload)
+                send_email_flag = True  # Always send email for new entry
 
             # Check the response
             if response.status_code == 200:
                 self.status_label.config(text="Data submitted successfully!")
                 self.load_data()  # Refresh data
+
+                if send_email_flag:
+                    recipients = ["michael@archidea-group.com"]  # Replace with actual recipients
+                    self.send_email_custom(email_subject, email_body, recipients)
+
             else:
                 self.status_label.config(text="Failed to submit data")
 
@@ -249,7 +294,6 @@ class TestScreen:
 
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
-
 
 if __name__ == "__main__":
     root = tk.Tk()
