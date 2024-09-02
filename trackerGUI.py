@@ -11,7 +11,7 @@ class TestScreen:
         self.root.title("Test Screen")
 
         # Set fullscreen
-        self.root.attributes('-fullscreen', True)
+        # self.root.attributes('-fullscreen', True)
         self.root.bind("<F11>", self.toggle_fullscreen)  # Toggle fullscreen mode with F11
         self.root.bind("<Escape>", self.quit_fullscreen)  # Exit fullscreen with Escape
 
@@ -99,7 +99,8 @@ class TestScreen:
         self.status_label.grid(row=7, columnspan=2, pady=10)
 
         # Create Treeview in the right frame
-        self.tree = ttk.Treeview(self.right_frame, columns=("Order Number", "Brand Name", "Pickup Date", "Delivery Date", "Status", "File Link", "Delete"), show="headings")
+        self.tree = ttk.Treeview(self.right_frame, columns=("Edit","Order Number", "Brand Name", "Pickup Date", "Delivery Date", "Status", "File Link", "Delete",), show="headings")
+        self.tree.heading("Edit", text="Edit")
         self.tree.heading("Order Number", text="Order Number")
         self.tree.heading("Brand Name", text="Brand Name")
         self.tree.heading("Pickup Date", text="Pickup Date")
@@ -107,6 +108,8 @@ class TestScreen:
         self.tree.heading("Status", text="Status")
         self.tree.heading("File Link", text="File Link")
         self.tree.heading("Delete", text="Delete")
+
+
 
         # Add vertical scrollbar
         vsb = ttk.Scrollbar(self.right_frame, orient="vertical", command=self.tree.yview)
@@ -118,9 +121,10 @@ class TestScreen:
         hsb.pack(side='bottom', fill='x')
         self.tree.configure(xscrollcommand=hsb.set)
 
-        self.tree.pack(fill='both', expand=True)
+        self.tree.pack(fill='both', expand=False)
 
         self.tree.bind("<Button-1>", self.on_tree_item_button_click)
+        self.tree.bind("<Button-2>", self.on_tree_item_button_click)
 
         # Load data into Treeview
         self.load_data()
@@ -132,11 +136,12 @@ class TestScreen:
         col_id = self.tree.identify_column(event.x)
 
         if row_id:
-            # Check if the click was on the last column (assume it contains the "-" button)
-            col_id = self.tree.identify_column(event.x)
-            if col_id == '#7':  # Change #7 to the index of your delete column
+            # Check if the click was on the "Delete" or "Edit" column
+            if col_id == '#7':  # Change #8 to the index of your delete column
                 if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this item?"):
                     self.delete_item(row_id)
+            elif col_id == '#1':  # Change #7 to the index of your edit column
+                self.edit_item(row_id)
 
 
     def load_data(self):
@@ -152,13 +157,15 @@ class TestScreen:
                     # Insert new data into Treeview
                     for item in data:
                         self.tree.insert("", "end", iid=item["id"], values=(
+                            "შეცვლა",
                             item["orderNumber"],
                             item["brandName"],
                             item["pickupDate"],
                             item["deliveryDate"],
                             item["status"],
                             item["fileLink"],
-                            "წაშლა"
+                            "წაშლა",
+                        
                         ))
                 except ValueError:
                     messagebox.showerror("Error", "Response is not in JSON format")
@@ -182,6 +189,19 @@ class TestScreen:
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
 
+    def edit_item(self, item_id):
+        item = self.tree.item(item_id)['values']
+        # Populate form with selected item's data
+        self.order_number.set(item[1])
+        self.brand_name.set(item[2])
+        self.pickup_date.set(item[3])
+        self.delivery_date.set(item[4])
+        self.status.set(item[5])
+        self.file_link.set(item[6])
+
+        # Store the id for the update operation
+        self.current_edit_id = item_id
+        self.status_label.config(text="Editing item...")
 
 
     def submit_form(self):
@@ -210,8 +230,13 @@ class TestScreen:
                 'fileLink': file_link
             }
 
-            # Send the POST request to the PHP backend
-            response = requests.post('https://ladogudi.serv00.net/insertItem.php', json=payload)
+            if hasattr(self, 'current_edit_id') and self.current_edit_id:
+                # Update the item
+                payload['id'] = self.current_edit_id
+                response = requests.post('https://ladogudi.serv00.net/updateItem.php', json=payload)
+            else:
+                # Insert new item
+                response = requests.post('https://ladogudi.serv00.net/insertItem.php', json=payload)
 
             # Check the response
             if response.status_code == 200:
@@ -220,8 +245,12 @@ class TestScreen:
             else:
                 self.status_label.config(text="Failed to submit data")
 
+            # Reset current_edit_id after submission
+            self.current_edit_id = None
+
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
