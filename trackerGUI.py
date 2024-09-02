@@ -260,8 +260,8 @@ class TestScreen:
                 'fileLink': file_link
             }
 
-            email_subject = "New Entry Added" if not hasattr(self, 'current_edit_id') else "Entry Updated"
-            email_body = f"Order Number: {order_number}\nBrand Name: {brand_name}\nPickup Date: {pickup_date_str}\nDelivery Date: {delivery_date_str}\nStatus: {status}\nFile Link: {file_link}"
+            email_subject = "ახალი ტრანსპორტირება" if not hasattr(self, 'current_edit_id') else "სტატუსის განახლება"
+            email_body = f"შეკვეთის ნომერი: {order_number}\nბრენდი: {brand_name}\nაღების თარიღი: {pickup_date_str}\nჩამოსვლის თარიღი: {delivery_date_str}\nსტატუსი: {status}\nფაილის ლინკი: {file_link}\n ყველა გადაზიდვის ნახვა: https://ladogudi.serv00.net/"
             send_email_flag = False
 
             if hasattr(self, 'current_edit_id') and self.current_edit_id:
