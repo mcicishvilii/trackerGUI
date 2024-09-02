@@ -99,14 +99,15 @@ class TestScreen:
         self.status_label.grid(row=7, columnspan=2, pady=10)
 
         # Create Treeview in the right frame
-        self.tree = ttk.Treeview(self.right_frame, columns=("Order Number", "Brand Name", "Pickup Date", "Delivery Date", "Status", "File Link"), show="headings")
+        self.tree = ttk.Treeview(self.right_frame, columns=("Order Number", "Brand Name", "Pickup Date", "Delivery Date", "Status", "File Link", "Delete"), show="headings")
         self.tree.heading("Order Number", text="Order Number")
         self.tree.heading("Brand Name", text="Brand Name")
         self.tree.heading("Pickup Date", text="Pickup Date")
         self.tree.heading("Delivery Date", text="Delivery Date")
         self.tree.heading("Status", text="Status")
         self.tree.heading("File Link", text="File Link")
-        
+        self.tree.heading("Delete", text="Delete")
+
         # Add vertical scrollbar
         vsb = ttk.Scrollbar(self.right_frame, orient="vertical", command=self.tree.yview)
         vsb.pack(side='right', fill='y')
@@ -119,12 +120,27 @@ class TestScreen:
 
         self.tree.pack(fill='both', expand=True)
 
+        self.tree.bind("<Button-1>", self.on_tree_item_button_click)
+
         # Load data into Treeview
         self.load_data()
 
+
+    def on_tree_item_button_click(self, event):
+        # Identify which row was clicked
+        row_id = self.tree.identify_row(event.y)
+        col_id = self.tree.identify_column(event.x)
+        
+        if row_id:
+            # Check if the click was on the last column (assume it contains the "-" button)
+            col_id = self.tree.identify_column(event.x)
+            if col_id == '#7':  # Change #7 to the index of your delete column
+                if messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this item?"):
+                    self.delete_item(row_id)
+
+
     def load_data(self):
         try:
-            # Fetch data from the API
             response = requests.get('https://ladogudi.serv00.net/getItems.php')
             if response.status_code == 200:
                 try:
@@ -132,16 +148,41 @@ class TestScreen:
                     # Clear existing data in the tree
                     for item in self.tree.get_children():
                         self.tree.delete(item)
-                    
+
                     # Insert new data into Treeview
                     for item in data:
-                        self.tree.insert("", "end", values=(item["orderNumber"], item["brandName"], item["pickupDate"], item["deliveryDate"], item["status"], item["fileLink"]))
+                        self.tree.insert("", "end", iid=item["id"], values=(
+                            item["orderNumber"],
+                            item["brandName"],
+                            item["pickupDate"],
+                            item["deliveryDate"],
+                            item["status"],
+                            item["fileLink"],
+                            "-"
+                        ))
                 except ValueError:
                     messagebox.showerror("Error", "Response is not in JSON format")
             else:
                 messagebox.showerror("Error", "Failed to connect to the server")
         except Exception as e:
             messagebox.showerror("Error", f"An error occurred: {str(e)}")
+    def delete_item(self, item_id):
+        try:
+            response = requests.post('https://ladogudi.serv00.net/deleteItem.php', json={'id': item_id})
+            if response.status_code == 200:
+                result = response.json()
+                if 'message' in result and result['message'] == 'Item deleted successfully':
+                    # Refresh the data
+                    self.load_data()
+                    self.status_label.config(text="Item deleted successfully!")
+                else:
+                    self.status_label.config(text="Failed to delete item")
+            else:
+                self.status_label.config(text="Failed to connect to the server")
+        except Exception as e:
+            messagebox.showerror("Error", f"An error occurred: {str(e)}")
+
+
 
     def submit_form(self):
         try:
